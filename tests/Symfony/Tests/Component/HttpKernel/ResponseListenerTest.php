@@ -16,13 +16,14 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 class ResponseListenerTest extends \PHPUnit_Framework_TestCase
 {
     public function testFilterDoesNothingForSubRequests()
     {
-        $event = new Event(null, 'core.response', array('request_type' => HttpKernelInterface::SUB_REQUEST));
+        $event = new Event(null, 'core.response', array('request_type' => HttpKernelInterface::SUB_REQUEST, 'request' => Request::create('/'), 'headers' => new ResponseHeaderBag()));
         $this->getDispatcher()->filter($event, $response = new Response('foo'));
 
         $this->assertEquals('', $response->headers->get('content-type'));
@@ -30,7 +31,7 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
 
     public function testFilterDoesNothingIfContentTypeIsSet()
     {
-        $event = new Event(null, 'core.response', array('request_type' => HttpKernelInterface::MASTER_REQUEST));
+        $event = new Event(null, 'core.response', array('request_type' => HttpKernelInterface::MASTER_REQUEST, 'request' => Request::create('/'), 'headers' => new ResponseHeaderBag()));
         $response = new Response('foo');
         $response->headers->set('Content-Type', 'text/plain');
         $this->getDispatcher()->filter($event, $response);
@@ -40,7 +41,7 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
 
     public function testFilterDoesNothingIfRequestFormatIsNotDefined()
     {
-        $event = new Event(null, 'core.response', array('request_type' => HttpKernelInterface::MASTER_REQUEST, 'request' => Request::create('/')));
+        $event = new Event(null, 'core.response', array('request_type' => HttpKernelInterface::MASTER_REQUEST, 'request' => Request::create('/'), 'headers' => new ResponseHeaderBag()));
         $this->getDispatcher()->filter($event, $response = new Response('foo'));
 
         $this->assertEquals('', $response->headers->get('content-type'));
@@ -50,7 +51,7 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     {
         $request = Request::create('/');
         $request->setRequestFormat('json');
-        $event = new Event(null, 'core.response', array('request_type' => HttpKernelInterface::MASTER_REQUEST, 'request' => $request));
+        $event = new Event(null, 'core.response', array('request_type' => HttpKernelInterface::MASTER_REQUEST, 'request' => $request, 'headers' => new ResponseHeaderBag()));
         $this->getDispatcher()->filter($event, $response = new Response('foo'));
 
         $this->assertEquals('application/json', $response->headers->get('content-type'));

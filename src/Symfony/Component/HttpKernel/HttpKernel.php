@@ -17,6 +17,7 @@ use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 /**
  * HttpKernel notifies events to convert a Request object to a Response one.
@@ -27,6 +28,7 @@ class HttpKernel implements HttpKernelInterface
 {
     protected $dispatcher;
     protected $resolver;
+    protected $responseHeaders;
 
     /**
      * Constructor
@@ -38,6 +40,7 @@ class HttpKernel implements HttpKernelInterface
     {
         $this->dispatcher = $dispatcher;
         $this->resolver = $resolver;
+        $this->responseHeaders = array();
     }
 
     /**
@@ -80,8 +83,10 @@ class HttpKernel implements HttpKernelInterface
      */
     protected function handleRaw(Request $request, $type = self::MASTER_REQUEST)
     {
+        array_push($this->responseHeaders, $headers = new ResponseHeaderBag());
+
         // request
-        $event = new Event($this, 'core.request', array('request_type' => $type, 'request' => $request));
+        $event = new Event($this, 'core.request', array('request_type' => $type, 'request' => $request, 'headers' => $headers));
         $response = $this->dispatcher->notifyUntil($event);
         if ($event->isProcessed()) {
             return $this->filterResponse($response, $request, 'A "core.request" listener returned a non response object.', $type);
@@ -135,7 +140,7 @@ class HttpKernel implements HttpKernelInterface
             throw new \RuntimeException($message);
         }
 
-        $response = $this->dispatcher->filter(new Event($this, 'core.response', array('request_type' => $type, 'request' => $request)), $response);
+        $response = $this->dispatcher->filter(new Event($this, 'core.response', array('request_type' => $type, 'request' => $request, 'headers' => array_pop($this->responseHeaders))), $response);
 
         if (!$response instanceof Response) {
             throw new \RuntimeException('A "core.response" listener returned a non response object.');

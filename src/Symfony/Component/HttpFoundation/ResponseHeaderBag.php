@@ -47,6 +47,22 @@ class ResponseHeaderBag extends HeaderBag
     }
 
     /**
+     * Merges a ResponseHeaderBag instance into the current one.
+     *
+     * @param ResponseHeaderBag $headers A ResponseHeaderBag instance
+     */
+    public function merge(ResponseHeaderBag $headers)
+    {
+        foreach ($headers->all() as $key => $value) {
+            $this->set($key, $value, true);
+        }
+
+        foreach ($headers->getCookies() as $cookie) {
+            $this->setCookie($cookie);
+        }
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function set($key, $values, $replace = true)

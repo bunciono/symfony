@@ -23,6 +23,7 @@ class HttpKernel extends BaseHttpKernel
     {
         $this->container = $container;
         $this->resolver = $controllerResolver;
+        $this->responseHeaders = array();
     }
 
     public function setEventDispatcher(EventDispatcherInterface $dispatcher)

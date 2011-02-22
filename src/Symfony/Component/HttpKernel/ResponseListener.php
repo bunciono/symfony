@@ -38,9 +38,7 @@ class ResponseListener
      */
     public function filter(EventInterface $event, Response $response)
     {
-        if (HttpKernelInterface::MASTER_REQUEST !== $event->get('request_type')) {
-            return $response;
-        }
+        $response->headers->merge($event->get('headers'));
 
         if (null === $response->getCharset()) {
             $response->setCharset($this->charset);
